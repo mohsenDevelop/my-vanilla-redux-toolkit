@@ -21,13 +21,12 @@ export const createSlice = <State, Reducers extends Record<string, (state: State
 
     const reducer = (state = initialState, action: Action): State => {
         const type = action.type.replace(`${name}/`, "");
-        console.log({ type })
+
         if ((reducers as any)[type]) {
             return (reducers as any)[type](state, action.payload);
         }
         return state;
     };
-    console.log({ actions, reducer, });
 
     return { actions, reducer, name, get initialState() { return initialState } };
 };
@@ -62,7 +61,6 @@ export const combineReducers = <Slices extends Record<string, any>>(reducers: Re
         for (const key in reducers) {
             nextState[key] = reducers[key](state[key], action);
         }
-        console.log({ nextState })
         return nextState as Slices;
     };
 }
