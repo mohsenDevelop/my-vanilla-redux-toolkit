@@ -4,6 +4,27 @@ export type Action = { type: string, payload?: any };
 export type Thunk<R = any> = (dispatch: any, getState: () => any) => R;
 export type Dispatch = (action: Action | Thunk<any>) => any;
 
+
+// -- Save State
+const saveStateToStorage = <State,>(key: string, state: State) => {
+    try {
+        localStorage.setItem(key, JSON.stringify(state));
+    } catch { }
+};
+
+// -- Load State
+const loadStateFromStorage = <State,>(key: string, fallback: State) => {
+    try {
+        const value = localStorage.getItem(key);
+        if (!value) return fallback;
+
+        return JSON.parse(value);
+
+    } catch (error) {
+        return fallback
+    }
+}
+
 // -- Slices
 export const createSlice = <State, Reducers extends Record<string, (state: State, action: Action) => State>>(options: {
     name: string;
@@ -66,13 +87,26 @@ export const combineReducers = <Slices extends Record<string, any>>(reducers: Re
 }
 
 // -- Store Provider & Hooks
-export const createStoreProvider = <State,>(reducer: (state: State, action: Action) => State, initialState: State) => {
+export const createStoreProvider = <State,>(
+    reducer: (state: State, action: Action) => State,
+    initialState: State,
+    persistKey?: string
+) => {
 
     const StoreContext = createContext<any>(null);
 
     const Provider = ({ children }: { children: ReactNode }) => {
 
-        const [state, origDispatch] = useReducer(reducer, initialState)
+        const [state, origDispatch] = useReducer(
+            reducer,
+            persistKey ? loadStateFromStorage(persistKey, initialState) : initialState
+        )
+
+        useEffect(() => {
+            if (persistKey) {
+                saveStateToStorage(persistKey, state);
+            }
+        }, [state, persistKey])
 
         const stateRef = useRef(state);
         useEffect(() => { stateRef.current = state; }, [state]);
